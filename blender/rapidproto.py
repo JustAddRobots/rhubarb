@@ -69,6 +69,7 @@ class SelectType(Menu):
 
 class VIEW3D_MT_PIE_template(Menu):
     bl_label = "Rapid Proto Pie Menu"
+    bl_idname = "rapid_proto.pie"
 
     def draw(self, context):
         layout = self.layout
