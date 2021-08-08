@@ -21,10 +21,10 @@ class OriginTo(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("Origin To")
+        layout.label(text="Origin To")
         layout.separator()
-        layout.operator(OriginToCursor.bl_idname, icon='PIVOT_CURSOR')
-        layout.operator(OriginToGeom.bl_idname, text="Origin to Geometry", icon='MESH_CUBE')
+        layout.operator(OriginToCursor.bl_idname, text="3D Cursor", icon='PIVOT_CURSOR')
+        layout.operator(OriginToGeom.bl_idname, text="Geometry", icon='MESH_CUBE')
 
 
 class PivotPoint(Menu):
@@ -33,10 +33,10 @@ class PivotPoint(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("Pivot Point")
+        layout.label(text="Pivot Point")
         layout.separator()
-        layout.operator(PivotPointCursor.bl_idname, icon='PIVOT_CURSOR')
-        layout.operator(PivotPointIndivOrigin.bl_idname, icon='PIVOT_INDIVIDUAL')
+        layout.operator(PivotPointCursor.bl_idname, text="3D Cursor", icon='PIVOT_CURSOR')
+        layout.operator(PivotPointIndivOrigin.bl_idname, text="Individual Origin", icon='PIVOT_INDIVIDUAL')
 
 
 class SelectMode(Menu):
@@ -45,12 +45,12 @@ class SelectMode(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("Select Mode")
+        layout.label(text="Select Mode")
         layout.separator()
-        layout.operator(SelectModeVertex.bl_idname, icon='VERTEXSEL')
-        layout.operator(SelectModeEdge.bl_idname, icon='EDGESEL')
-        layout.operator(SelectModeFace.bl_idname, icon='FACESEL')
-        layout.operator(SelectModeVEF.bl_idname, icon='OBJECT_DATA')
+        layout.operator(SelectModeVertex.bl_idname, text="Vertex", icon='VERTEXSEL')
+        layout.operator(SelectModeEdge.bl_idname, text="Edge", icon='EDGESEL')
+        layout.operator(SelectModeFace.bl_idname, text="Face", icon='FACESEL')
+        layout.operator(SelectModeVEF.bl_idname, text="Vertex/Edges/Faces", icon='OBJECT_DATA')
 
 
 class SelectType(Menu):
@@ -59,12 +59,12 @@ class SelectType(Menu):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("Select Type")
+        layout.label(text="Select Type")
         layout.separator()
-        layout.operator(SelectTypeMesh.bl_idname, icon='MESH_CUBE')
-        layout.operator(SelectTypeEmpty.bl_idname, icon='OUTLINER_DATA_EMPTY')
-        layout.operator(SelectTypeLight.bl_idname, icon='LIGHT_DATA')
-        layout.operator(SelectTypeCamera.bl_idname, icon='CAMERA_DATA')
+        layout.operator(SelectTypeMesh.bl_idname, text="Mesh", icon='MESH_CUBE')
+        layout.operator(SelectTypeEmpty.bl_idname, text="Empty", icon='OUTLINER_DATA_EMPTY')
+        layout.operator(SelectTypeLight.bl_idname, text="Light", icon='LIGHT_DATA')
+        layout.operator(SelectTypeCamera.bl_idname, text="Camera", icon='CAMERA_DATA')
 
 
 class VIEW3D_MT_PIE_template(Menu):
@@ -74,24 +74,33 @@ class VIEW3D_MT_PIE_template(Menu):
     def draw(self, context):
         layout = self.layout
         pie = layout.menu_pie()
-        pie.operator(OriginTo.bl_idname, text="Origin To")
-        pie.operator(AlignObjs.bl_idname, text="Align Objects")
-        pie.operator(PivotPoint.bl_idname, text="Pivot Point")
+        pie.menu(OriginTo.bl_idname, text="Origin To")
+        if context.mode == 'EDIT_MESH':
+            pie.operator(CenterViewCursor.bl_idname, text="Center View Cursor")
+        elif context.mode == 'OBJECT':
+            pie.operator(AlignObjs.bl_idname, text="Align Objects")
+        pie.menu(PivotPoint.bl_idname, text="Pivot Point")
         pie.operator(SelectInvert.bl_idname, text="Invert Selection")
         if context.mode == 'EDIT_MESH':
-            pie.operator(SelectMode.bl_idname, text="Selection Mode", icon='VERTEXSEL')
+            pie.menu(SelectMode.bl_idname, text="Selection Mode", icon='VERTEXSEL')
         elif context.mode == 'OBJECT':
-            pie.operator(SelectType.bl_idname, text="Selection Type", icon='SELECT_SET')
+            pie.menu(SelectType.bl_idname, text="Selection Type", icon='SELECT_SET')
         pie.operator(SelectAll.bl_idname, text="Select All Toggle")
 
 
-class OriginToCursor(Operator):  # icon
+class OriginToCursor(Operator):
     """Origin to Cursor"""
     bl_idname = "origin_to.cursor"
     bl_label = "OriginToCursor"
 
     def execute(self, context):
-        bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+        if context.mode == 'EDIT_MESH':
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.pivot2cursor_edit()
+        elif context.mode == 'OBJECT':
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
         return {'FINISHED'}
 
 
@@ -101,7 +110,23 @@ class OriginToGeom(Operator):
     bl_label = "OriginToGeom"
 
     def execute(self, context):
-        bpy.ops.object.origintogeometry_edit()
+        if context.mode == 'EDIT_MESH':
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.object.origintogeometry_edit()
+        elif context.mode == 'OBJECT':
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+        return {'FINISHED'}
+
+
+class CenterViewCursor(Operator):
+    """Center View on Custor"""
+    bl_idname = "center_view.cursor"
+    bl_label = "CenterViewCursor"
+
+    def execute(self, context):
+        bpy.ops.view3d.view_center_cursor()
         return {'FINISHED'}
 
 
@@ -111,11 +136,11 @@ class AlignObjs(Operator):
     bl_label = "AlignObjs"
 
     def execute(self, context):
-        bpy.ops.object.align
+        bpy.ops.object.align()
         return {'FINISHED'}
 
 
-class PivotPointCursor(Operator):  # icon
+class PivotPointCursor(Operator):
     """Pivot Point 3DCursor"""
     bl_idname = "pivot_point.cursor"
     bl_label = "PivotPiontCursor"
@@ -125,7 +150,7 @@ class PivotPointCursor(Operator):  # icon
         return {'FINISHED'}
 
 
-class PivotPointIndivOrigin(Operator):  # icon
+class PivotPointIndivOrigin(Operator):
     """Pivot Point Individual Origin"""
     bl_idname = "pivot_point.indivorigin"
     bl_label = "PivotPointIndivOrigin"
@@ -141,7 +166,10 @@ class SelectInvert(Operator):
     bl_label = "SelectInvert"
 
     def execute(self, context):
-        bpy.ops.object.select_all(action='INVERT')
+        if context.mode == 'EDIT_MESH':
+            bpy.ops.mesh.select_all(action='INVERT')
+        elif context.mode == 'OBJECT':
+            bpy.ops.object.select_all(action='INVERT')
         return {'FINISHED'}
 
 
@@ -151,7 +179,10 @@ class SelectAll(Operator):
     bl_label = "SelectAll"
 
     def execute(self, context):
-        bpy.ops.object.select_all(action='TOGGLE')
+        if context.mode == 'EDIT_MESH':
+            bpy.ops.mesh.select_all(action='TOGGLE')
+        elif context.mode == 'OBJECT':
+            bpy.ops.object.select_all(action='TOGGLE')
         return {'FINISHED'}
 
 
@@ -236,11 +267,13 @@ class SelectTypeCamera(Operator):
 
 
 classes = (
+    VIEW3D_MT_PIE_template,
     OriginTo,
     PivotPoint,
     SelectMode,
     OriginToCursor,
     OriginToGeom,
+    CenterViewCursor,
     AlignObjs,
     PivotPointCursor,
     PivotPointIndivOrigin,
@@ -257,7 +290,14 @@ classes = (
 )
 
 
-register, unregister = bpy.utils.register_classes_factory(classes)
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 
 if __name__ == "__main__":
