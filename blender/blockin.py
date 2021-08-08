@@ -4,18 +4,21 @@ from bpy.types import Operator
 
 
 bl_info = {
-    "name": "RapidProto Pie Menu",
-    "description": "Pie Menu for Rapid Prototyping",
+    "name": "Block-In Pie Menu",
+    "description": "Pie Menu for Block-In Prototyping",
     "author": "Roderick Constance",
-    "version": (0, 0, 1, 0),
+    "version": (0, 1, 0),
     "blender": (2, 80, 0),
     "warning": "",
-    "category": "3D View",
-    "support": "TESTING"
+    "support": "TESTING",
+    "category": "User Interface"
 }
+
+# START Pie Menus --->
 
 
 class OriginTo(Menu):
+    """Set Origin To"""
     bl_label = "Origin To"
     bl_idname = "origin.to"
 
@@ -28,6 +31,7 @@ class OriginTo(Menu):
 
 
 class PivotPoint(Menu):
+    """Set Pivot Point"""
     bl_label = "Pivot Point"
     bl_idname = "pivot.point"
 
@@ -40,12 +44,13 @@ class PivotPoint(Menu):
 
 
 class SelectMode(Menu):
+    """Set Selection Mode"""
     bl_label = "Select Mode"
     bl_idname = "select.mode"
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Select Mode")
+        layout.label(text="Selection Mode")
         layout.separator()
         layout.operator(SelectModeVertex.bl_idname, text="Vertex", icon='VERTEXSEL')
         layout.operator(SelectModeEdge.bl_idname, text="Edge", icon='EDGESEL')
@@ -54,12 +59,13 @@ class SelectMode(Menu):
 
 
 class SelectType(Menu):
+    """Set Select All Type"""
     bl_label = "Select Type"
     bl_idname = "select.type"
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Select Type")
+        layout.label(text="Selection Type")
         layout.separator()
         layout.operator(SelectTypeMesh.bl_idname, text="Mesh", icon='MESH_CUBE')
         layout.operator(SelectTypeEmpty.bl_idname, text="Empty", icon='OUTLINER_DATA_EMPTY')
@@ -68,24 +74,58 @@ class SelectType(Menu):
 
 
 class VIEW3D_MT_PIE_template(Menu):
-    bl_label = "Rapid Proto Pie Menu"
-    bl_idname = "rapid_proto.pie"
+    """Block-In Pie Menu"""
+    bl_label = "Block-In Pie Menu"
+    bl_idname = "block_in.pie"
 
     def draw(self, context):
         layout = self.layout
         pie = layout.menu_pie()
-        pie.menu(OriginTo.bl_idname, text="Origin To")
-        if context.mode == 'EDIT_MESH':
-            pie.operator(CenterViewCursor.bl_idname, text="Center View Cursor")
-        elif context.mode == 'OBJECT':
-            pie.operator(AlignObjs.bl_idname, text="Align Objects")
-        pie.menu(PivotPoint.bl_idname, text="Pivot Point")
-        pie.operator(SelectInvert.bl_idname, text="Invert Selection")
+        # WEST
+        pie.operator(ViewWireframe.bl_idname, text="View Wireframe", icon='SHADING_WIRE')
+        # EAST
+        pie.operator(ViewSolid.bl_idname, text="View Solid", icon='SHADING_SOLID')
+        # SOUTH
         if context.mode == 'EDIT_MESH':
             pie.menu(SelectMode.bl_idname, text="Selection Mode", icon='VERTEXSEL')
         elif context.mode == 'OBJECT':
             pie.menu(SelectType.bl_idname, text="Selection Type", icon='SELECT_SET')
+        # NORTH
+        if context.mode == 'EDIT_MESH':
+            pie.operator(CenterViewCursor.bl_idname, text="Center View Cursor", icon='TRACKER')
+        elif context.mode == 'OBJECT':
+            pie.operator(AlignObjs.bl_idname, text="Align Objects", icon='MOD_ARRAY')
+        # NORTHWEST
+        pie.menu(OriginTo.bl_idname, text="Origin To")
+        # NORTHEAST
+        pie.menu(PivotPoint.bl_idname, text="Pivot Point")
+        # SOUTHWEST
         pie.operator(SelectAll.bl_idname, text="Select All Toggle")
+        # SOUTHEAST
+        pie.operator(SelectInvert.bl_idname, text="Invert Selection")
+
+
+# <--- END Pie menus
+# START Operators --->
+
+class ViewWireframe(Operator):
+    """View Wireframe"""
+    bl_idname = "view.wireframe"
+    bl_label = "ViewWireframe"
+
+    def execute(self, context):
+        bpy.context.space_data.shading.type = 'WIREFRAME'
+        return {'FINISHED'}
+
+
+class ViewSolid(Operator):
+    """View Solid"""
+    bl_idname = "view.solid"
+    bl_label = "ViewSolid"
+
+    def execute(self, context):
+        bpy.context.space_data.shading.type = 'SOLID'
+        return {'FINISHED'}
 
 
 class OriginToCursor(Operator):
@@ -121,7 +161,7 @@ class OriginToGeom(Operator):
 
 
 class CenterViewCursor(Operator):
-    """Center View on Custor"""
+    """Center View on Cursor"""
     bl_idname = "center_view.cursor"
     bl_label = "CenterViewCursor"
 
@@ -266,11 +306,16 @@ class SelectTypeCamera(Operator):
         return {'FINISHED'}
 
 
+# <--- END Operators
+
 classes = (
     VIEW3D_MT_PIE_template,
+    ViewWireframe,
+    ViewSolid,
     OriginTo,
     PivotPoint,
     SelectMode,
+    SelectType,
     OriginToCursor,
     OriginToGeom,
     CenterViewCursor,
