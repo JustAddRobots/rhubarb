@@ -7,7 +7,7 @@ bl_info = {
     "name": "Block-In Pie Menu",
     "description": "Pie Menu for Block-In Prototyping",
     "author": "Roderick Constance",
-    "version": (0, 1, 0),
+    "version": (0, 2, 0),
     "blender": (2, 80, 0),
     "warning": "",
     "support": "TESTING",
@@ -40,7 +40,54 @@ class PivotPoint(Menu):
         layout.label(text="Pivot Point")
         layout.separator()
         layout.operator(PivotPointCursor.bl_idname, text="3D Cursor", icon='PIVOT_CURSOR')
-        layout.operator(PivotPointIndivOrigin.bl_idname, text="Individual Origin", icon='PIVOT_INDIVIDUAL')
+        layout.operator(
+            PivotPointIndivOrigin.bl_idname,
+            text="Individual Origin",
+            icon='PIVOT_INDIVIDUAL'
+        )
+        layout.operator(
+            PivotPointActiveElement.bl_idname,
+            text="Active Element",
+            icon='PIVOT_ACTIVE'
+        )
+        layout.operator(
+            PivotPointMedianPoint.bl_idname,
+            text="Median Point",
+            icon='PIVOT_MEDIAN'
+        )
+        layout.operator(
+            PivotPointBoundingBoxCenter.bl_idname,
+            text="Bounding Box Center",
+            icon='PIVOT_BOUNDBOX'
+        )
+
+
+class SelectedTo(Menu):
+    """Snap Selected"""
+    bl_label = "Selected To"
+    bl_idname = "selected.to"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Snap Selected To")
+        layout.separator()
+        layout.operator(SelectedToGrid.bl_idname, text="Grid", icon='MESH_GRID')
+        layout.operator(SelectedToCursor.bl_idname, text="Cursor", icon='CURSOR')
+        layout.operator(SelectedToActive.bl_idname, text="Active", icon='SORTBYEXT')
+
+
+class CursorTo(Menu):
+    """Snap Cursor"""
+    bl_label = "Cursor To"
+    bl_idname = "cursor.to"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Snap Cursor To")
+        layout.separator()
+        layout.operator(CursorToGrid.bl_idname, text="Grid", icon='MESH_GRID')
+        layout.operator(CursorToSelected.bl_idname, text="Selected", icon='SELECT_SET')
+        layout.operator(CursorToActive.bl_idname, text="Active", icon='SORTBYEXT')
 
 
 class SelectMode(Menu):
@@ -100,9 +147,15 @@ class VIEW3D_MT_PIE_template(Menu):
         # NORTHEAST
         pie.menu(PivotPoint.bl_idname, text="Pivot Point")
         # SOUTHWEST
-        pie.operator(SelectAll.bl_idname, text="Select All Toggle")
+        if context.mode == 'EDIT_MESH':
+            pie.operator(SelectAll.bl_idname, text="Select All Toggle")
+        elif context.mode == 'OBJECT':
+            pie.menu(SelectedTo.bl_idname, text="Snap Selected To")
         # SOUTHEAST
-        pie.operator(SelectInvert.bl_idname, text="Invert Selection")
+        if context.mode == 'EDIT_MESH':
+            pie.operator(SelectInvert.bl_idname, text="Invert Selection")
+        elif context.mode == 'OBJECT':
+            pie.menu(CursorTo.bl_idname, text="Snap Cursor To")
 
 
 # <--- END Pie menus
@@ -160,6 +213,66 @@ class OriginToGeom(Operator):
         return {'FINISHED'}
 
 
+class SelectedToGrid(Operator):
+    """Selected to Grid"""
+    bl_idname = "selected_to.grid"
+    bl_label = "SelectedToGrid"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_selected_to_grid()
+        return {'FINISHED'}
+
+
+class SelectedToCursor(Operator):
+    """Selected to Cursor"""
+    bl_idname = "selected_to.cursor"
+    bl_label = "SelectedToCursor"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_selected_to_cursor()
+        return {'FINISHED'}
+
+
+class SelectedToActive(Operator):
+    """Selected to Active"""
+    bl_idname = "selected_to.active"
+    bl_label = "SelectedToActive"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_selected_to_active()
+        return {'FINISHED'}
+
+
+class CursorToGrid(Operator):
+    """Cursor to Grid"""
+    bl_idname = "cursor_to.grid"
+    bl_label = "CursorToGrid"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_grid()
+        return {'FINISHED'}
+
+
+class CursorToSelected(Operator):
+    """Cursor to Selected"""
+    bl_idname = "cursor_to.selected"
+    bl_label = "CursorToSelected"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_selected()
+        return {'FINISHED'}
+
+
+class CursorToActive(Operator):
+    """Cursor to Active"""
+    bl_idname = "cursor_to.active"
+    bl_label = "CursorToActive"
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_active()
+        return {'FINISHED'}
+
+
 class CenterViewCursor(Operator):
     """Center View on Cursor"""
     bl_idname = "center_view.cursor"
@@ -197,6 +310,36 @@ class PivotPointIndivOrigin(Operator):
 
     def execute(self, context):
         bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+        return {'FINISHED'}
+
+
+class PivotPointActiveElement(Operator):
+    """Pivot Point Active Element"""
+    bl_idname = "pivot_point.activeelement"
+    bl_label = "PivotPointActiveElement"
+
+    def execute(self, context):
+        bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
+        return {'FINISHED'}
+
+
+class PivotPointMedianPoint(Operator):
+    """Pivot Point Median Point"""
+    bl_idname = "pivot_point.medianpoint"
+    bl_label = "PivotPointMedianPoint"
+
+    def execute(self, context):
+        bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
+        return {'FINISHED'}
+
+
+class PivotPointBoundingBoxCenter(Operator):
+    """Pivot Point Bounding Box Center"""
+    bl_idname = "pivot_point.boundingboxcenter"
+    bl_label = "PivotPointBoundingBoxCenter"
+
+    def execute(self, context):
+        bpy.context.scene.tool_settings.transform_pivot_point = 'BOUNDING_BOX_CENTER'
         return {'FINISHED'}
 
 
@@ -314,14 +457,25 @@ classes = (
     ViewSolid,
     OriginTo,
     PivotPoint,
+    SelectedTo,
+    CursorTo,
     SelectMode,
     SelectType,
     OriginToCursor,
     OriginToGeom,
+    SelectedToGrid,
+    SelectedToCursor,
+    SelectedToActive,
+    CursorToGrid,
+    CursorToSelected,
+    CursorToActive,
     CenterViewCursor,
     AlignObjs,
     PivotPointCursor,
     PivotPointIndivOrigin,
+    PivotPointActiveElement,
+    PivotPointMedianPoint,
+    PivotPointBoundingBoxCenter,
     SelectInvert,
     SelectAll,
     SelectModeVertex,
